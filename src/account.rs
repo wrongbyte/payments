@@ -117,7 +117,6 @@ impl Account {
     /// Withdraws the held funds from the account.
     pub fn chargeback_and_lock(&mut self, disputed_amount: Decimal) {
         self.held -= disputed_amount;
-        self.available -= disputed_amount;
         self.locked = true;
     }
 }
