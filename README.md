@@ -21,15 +21,22 @@ client,available,held,total,locked
 2,2,0,2,false
 ```
 
+## Overview
+TODO
+
 ## Transactions
-There are five types of transactions in this system.
+There are five types of transactions recorded. Deposits and withdraws represent money flowing in and out of the system, while disputes, resolves and chargebacks are related to dispute claims.
 ### Deposit
-TODO
+A credit to a client's asset account from an external source. Processing a deposit increases both the client's available funds and total funds by the specified amount.
+
 ### Withdrawal
-TODO
+A debit from a client's asset account to an external destination. Processing a withdrawal decreases both the client's available funds and total funds by the specified amount. A withdrawal should fail if the client does not have sufficient available funds.
+
 ### Dispute
-TODO
+A dispute is a claim that a previously processed transaction (specifically a deposit) was erroneous or fraudulent and should be reversed. When a dispute is filed, **the disputed funds are moved from available to held, keeping the total unchanged.** A dispute references the original transaction by ID and can be followed by either a resolve (releasing the held funds back to available) or a chargeback (removing the held funds and freezing the account).
+
 ### Resolve
-TODO
+A resolution to an ongoing dispute, indicating that the disputed transaction was valid after all. Processing a resolve moves the disputed funds from held back to available, leaving the total unchanged. A resolve is ignored if the referenced transaction does not exist or is not currently under dispute.
+
 ### Chargeback
-TODO
+The final state of a dispute, representing a reversal of the original transaction. Processing a chargeback removes the disputed funds from both held and total, and immediately freezes the client's account. A chargeback is ignored if the referenced transaction does not exist or is not currently under dispute.
