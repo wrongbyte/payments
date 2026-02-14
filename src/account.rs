@@ -5,7 +5,7 @@ use rust_decimal::Decimal;
 
 use crate::transaction::{Dispute, Transaction, TransactionId, TransactionKind};
 
-/// Client's assets account.
+/// The current state of a client's asset and transaction history.
 #[derive(Eq, PartialEq)]
 pub struct Account {
     /// Funds available for transactions
@@ -14,9 +14,11 @@ pub struct Account {
     pub held: Decimal,
     /// If this account can do transactions
     pub locked: bool,
-    /// History of transactions of this client, stored in 
+    /// History of transactions of this client, stored in
     /// chronological order.
     pub transactions: IndexMap<TransactionId, Transaction>,
+    /// Disputes in this account.
+    pub disputes: HashMap<TransactionId, Dispute>,
 }
 
 impl Account {
@@ -26,15 +28,12 @@ impl Account {
             held: Decimal::ZERO,
             locked: false,
             transactions: IndexMap::new(),
+            disputes: HashMap::new(),
         }
     }
 
     /// Updates the client account accordingly to the new transaction received.
-    pub fn process_transaction(
-        &mut self,
-        transaction: Transaction,
-        disputes: &mut HashMap<TransactionId, Dispute>,
-    ) {
+    pub fn process_transaction(&mut self, transaction: Transaction) {
         if self.locked {
             return;
         }
@@ -54,19 +53,19 @@ impl Account {
                 }
             }
             TransactionKind::Dispute => {
-                if disputes.contains_key(&tx_id) {
+                if self.disputes.contains_key(&tx_id) {
                     println!("This transaction already has an associated dispute.");
                 }
                 if let Some(transaction) = self.transactions.get(&tx_id)
                     && let Some(disputed_amount) = transaction.deposit_amount()
                 {
                     let dispute = Dispute::new();
-                    disputes.insert(tx_id, dispute);
+                    self.disputes.insert(tx_id, dispute);
                     self.hold_funds(disputed_amount);
                 }
             }
             TransactionKind::Resolve => {
-                if let Some(dispute) = disputes.get_mut(&tx_id)
+                if let Some(dispute) = self.disputes.get_mut(&tx_id)
                     && dispute.can_finish()
                     && let Some(disputed_amount) = self.disputed_deposit(tx_id)
                 {
@@ -75,7 +74,7 @@ impl Account {
                 }
             }
             TransactionKind::Chargeback => {
-                if let Some(dispute) = disputes.get_mut(&tx_id)
+                if let Some(dispute) = self.disputes.get_mut(&tx_id)
                     && dispute.can_finish()
                     && let Some(disputed_amount) = self.disputed_deposit(tx_id)
                 {

@@ -25,7 +25,8 @@ pub enum TransactionKind {
     Chargeback,
 }
 
-/// A record of a financial operation performed on a client's asset account.
+/// Record of a financial operation performed on a client's asset account.
+/// A transaction represent immutable historical events.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Transaction {
     pub kind: TransactionKind,
@@ -78,6 +79,7 @@ pub enum DisputeState {
 /// A dispute references the original transaction by ID and can be followed by either a
 /// resolve (releasing the held funds back to available) or a chargeback (removing the held
 /// funds and freezing the account).
+#[derive(PartialEq, Eq)]
 pub struct Dispute {
     state: DisputeState,
 }
