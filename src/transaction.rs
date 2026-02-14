@@ -3,11 +3,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct ClientId(u16);
+pub struct ClientId(pub u16);
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct TransactionId(u32);
+pub struct TransactionId(pub u32);
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TransactionKind {

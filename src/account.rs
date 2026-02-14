@@ -48,12 +48,14 @@ impl Account {
         match transaction_kind {
             TransactionKind::Deposit { amount } => {
                 if transaction.amount_is_valid() {
-                    self.available += amount
+                    self.available += amount;
+                    self.transactions.insert(tx_id, transaction);
                 }
             }
             TransactionKind::Withdraw { amount } => {
                 if transaction.amount_is_valid() && self.available > amount {
-                    self.available -= amount
+                    self.available -= amount;
+                    self.transactions.insert(tx_id, transaction);
                 }
             }
             TransactionKind::Dispute => {
@@ -117,5 +119,76 @@ impl Account {
         self.held -= disputed_amount;
         self.available -= disputed_amount;
         self.locked = true;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::transaction::ClientId;
+
+    use super::*;
+
+    #[test]
+    fn test_deposit() {
+        let mut transactions = vec![];
+        for i in 0..10 {
+            transactions.push(Transaction {
+                client: ClientId(1),
+                kind: TransactionKind::Deposit {
+                    amount: Decimal::new(10, 0),
+                },
+                id: TransactionId(i),
+            });
+        }
+        let expected_available = Decimal::new(100, 0);
+        let account = transactions
+            .into_iter()
+            .fold(Account::new(Decimal::ZERO), |mut acc, tx| {
+                acc.process_transaction(tx);
+                acc
+            });
+
+        assert_eq!(account.available, expected_available);
+        assert_eq!(account.held, Decimal::ZERO);
+        assert_eq!(account.total_funds(), expected_available);
+        for i in 0..10 {
+            assert!(account.transactions.contains_key(&TransactionId(i)));
+        }
+    }
+
+    #[test]
+    fn test_withdraw() {
+        let mut transactions = vec![];
+        for i in 0..10 {
+            transactions.push(Transaction {
+                client: ClientId(1),
+                kind: TransactionKind::Deposit {
+                    amount: Decimal::new(10, 0),
+                },
+                id: TransactionId(i),
+            });
+        }
+
+        transactions.push(Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Withdraw {
+                amount: Decimal::new(5, 0),
+            },
+            id: TransactionId(15),
+        });
+
+        let expected_available = Decimal::new(95, 0);
+        let account = transactions
+            .into_iter()
+            .fold(Account::new(Decimal::ZERO), |mut acc, tx| {
+                acc.process_transaction(tx);
+                acc
+            });
+        assert_eq!(account.available, expected_available);
+        assert_eq!(account.held, Decimal::ZERO);
+        assert!(account.transactions.contains_key(&TransactionId(15)));
+        for i in 0..10 {
+            assert!(account.transactions.contains_key(&TransactionId(i)));
+        }
     }
 }
