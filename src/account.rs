@@ -65,18 +65,20 @@ impl Account {
                 }
             }
             TransactionKind::Resolve => {
+                let disputed_amount = self.disputed_deposit(tx_id);
                 if let Some(dispute) = self.disputes.get_mut(&tx_id)
                     && dispute.can_finish()
-                    && let Some(disputed_amount) = self.disputed_deposit(tx_id)
+                    && let Some(disputed_amount) = disputed_amount
                 {
                     dispute.resolve();
                     self.release_held_funds(disputed_amount);
                 }
             }
             TransactionKind::Chargeback => {
+                let disputed_amount = self.disputed_deposit(tx_id);
                 if let Some(dispute) = self.disputes.get_mut(&tx_id)
                     && dispute.can_finish()
-                    && let Some(disputed_amount) = self.disputed_deposit(tx_id)
+                    && let Some(disputed_amount) = disputed_amount
                 {
                     dispute.chargeback();
                     self.chargeback_and_lock(disputed_amount);
