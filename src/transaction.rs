@@ -9,7 +9,7 @@ pub struct ClientId(pub u16);
 #[serde(transparent)]
 pub struct TransactionId(pub u32);
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TransactionKind {
     /// A credit to a client's asset account from an external source.
     Deposit { amount: Decimal },
@@ -27,7 +27,7 @@ pub enum TransactionKind {
 
 /// Record of a financial operation performed on a client's asset account.
 /// A transaction represent immutable historical events.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Transaction {
     pub kind: TransactionKind,
     pub client: ClientId,

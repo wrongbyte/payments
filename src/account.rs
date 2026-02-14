@@ -191,4 +191,159 @@ mod tests {
             assert!(account.transactions.contains_key(&TransactionId(i)));
         }
     }
+
+    // Withdraw with insufficient funds should not be processed and should not be added to the transaction history.
+    #[test]
+    fn insufficient_funds() {
+        let mut transactions = vec![];
+        transactions.push(Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Deposit {
+                amount: Decimal::new(5, 0),
+            },
+            id: TransactionId(1),
+        });
+
+        transactions.push(Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Withdraw {
+                amount: Decimal::new(100, 0),
+            },
+            id: TransactionId(15),
+        });
+
+        let expected_available = Decimal::new(5, 0);
+        let account = transactions
+            .into_iter()
+            .fold(Account::new(Decimal::ZERO), |mut acc, tx| {
+                acc.process_transaction(tx);
+                acc
+            });
+        assert_eq!(account.available, expected_available);
+        assert_eq!(account.held, Decimal::ZERO);
+        assert!(!account.transactions.contains_key(&TransactionId(15)));
+    }
+
+    // Basic dispute case
+    #[test]
+    fn test_dispute() {
+        // Client deposits 100, then deposits 50 more, then disputes the first transaction.
+        // 100 is moved to held, 50 is still available. Total is 150.
+        let deposit_1 = Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Deposit {
+                amount: Decimal::new(100, 0),
+            },
+            id: TransactionId(1),
+        };
+
+        let deposit_2 = Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Deposit {
+                amount: Decimal::new(50, 0),
+            },
+            id: TransactionId(2),
+        };
+
+        let dispute = Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Dispute,
+            id: TransactionId(1), //first deposit
+        };
+
+        let transactions = vec![deposit_1, deposit_2, dispute];
+
+        let account = transactions
+            .into_iter()
+            .fold(Account::new(Decimal::ZERO), |mut acc, tx| {
+                acc.process_transaction(tx);
+                acc
+            });
+        assert_eq!(account.available, Decimal::new(50, 0));
+        assert_eq!(account.held, Decimal::new(100, 0));
+        assert_eq!(account.total_funds(), Decimal::new(150, 0));
+        assert_eq!(account.disputes.len(), 1);
+        assert!(account.disputes.contains_key(&TransactionId(1)));
+    }
+
+    #[test]
+    fn test_resolve() {
+        // Client deposits 100, then disputes it, then resolves the dispute.
+        // After the dispute, 100 is held and 0 is available. After the resolve, 100 is available again and 0 is held.
+        let deposit = Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Deposit {
+                amount: Decimal::new(100, 0),
+            },
+            id: TransactionId(1),
+        };
+
+        let dispute = Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Dispute,
+            id: TransactionId(1), //first deposit
+        };
+
+        let resolve = Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Resolve,
+            id: TransactionId(1), //first deposit
+        };
+
+        let transactions = vec![deposit, dispute, resolve];
+
+        let account = transactions
+            .into_iter()
+            .fold(Account::new(Decimal::ZERO), |mut acc, tx| {
+                acc.process_transaction(tx);
+                acc
+            });
+        assert_eq!(account.available, Decimal::new(100, 0));
+        assert_eq!(account.held, Decimal::ZERO);
+        assert_eq!(account.total_funds(), Decimal::new(100, 0));
+        assert_eq!(account.disputes.len(), 1);
+        assert!(account.disputes.contains_key(&TransactionId(1)));
+    }
+
+    #[test]
+    fn test_blocked_account_after_chargeback() {
+        // Client deposits 100, then disputes it, then chargebacks the dispute.
+        // After the dispute, 100 is held and 0 is available. After the chargeback, 0 is held, 0 is available and the account is locked.
+        let deposit = Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Deposit {
+                amount: Decimal::new(100, 0),
+            },
+            id: TransactionId(1),
+        };
+
+        let dispute = Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Dispute,
+            id: TransactionId(1), //first deposit
+        };
+        // at this point client has 100 held and 0 available
+        let chargeback = Transaction {
+            client: ClientId(1),
+            kind: TransactionKind::Chargeback,
+            id: TransactionId(1), //first deposit
+        };
+
+        let transactions = vec![deposit, dispute, chargeback];
+
+        let account = transactions
+            .into_iter()
+            .fold(Account::new(Decimal::ZERO), |mut acc, tx| {
+                acc.process_transaction(tx);
+                println!("After processing transaction {:?}, account state is: available: {}, held: {}, total: {}, locked: {}",
+                    tx, acc.available, acc.held, acc.total_funds(), acc.locked);
+                acc
+            });
+        assert_eq!(account.available, Decimal::ZERO);
+        assert_eq!(account.held, Decimal::ZERO);
+        assert_eq!(account.total_funds(), Decimal::ZERO);
+        assert_eq!(account.disputes.len(), 1);
+        assert!(account.disputes.contains_key(&TransactionId(1)));
+        assert!(account.locked);
+    }
 }
