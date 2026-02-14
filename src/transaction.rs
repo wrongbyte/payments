@@ -11,13 +11,21 @@ pub struct TransactionId(u32);
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TransactionKind {
+    /// A credit to a client's asset account from an external source.
     Deposit { amount: Decimal },
+    /// A debit from a client's asset account to an external destination.
     Withdraw { amount: Decimal },
+    /// Claim that a previously processed transaction (specifically a deposit) was
+    /// erroneous or fraudulent and should be reversed.
     Dispute,
+    /// A resolution to an ongoing dispute, indicating that the disputed transaction
+    /// was valid.
     Resolve,
+    /// The final state of a dispute, representing a reversal of the original transaction.
     Chargeback,
 }
 
+/// A record of a financial operation performed on a client's asset account.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Transaction {
     pub kind: TransactionKind,
@@ -44,21 +52,13 @@ impl Transaction {
     }
 
     /// Checks if the transaction amount is a valid one.
-    pub fn is_valid(&self) -> bool {
+    pub fn amount_is_valid(&self) -> bool {
         match self.kind {
             TransactionKind::Deposit { amount } => amount > Decimal::ZERO,
             TransactionKind::Withdraw { amount } => amount > Decimal::ZERO,
             _ => true,
         }
     }
-}
-
-pub struct EngineOutput {
-    pub client: ClientId,
-    pub available: Decimal,
-    pub held: Decimal,
-    pub total: Decimal,
-    pub locked: bool,
 }
 
 #[derive(PartialEq, Eq)]
@@ -89,7 +89,7 @@ impl Dispute {
         }
     }
 
-    /// If we can finish the dispute, either via a resolve or a chargeback.
+    /// If we can finish the dispute, either to a resolve or a chargeback.
     pub fn can_finish(&self) -> bool {
         matches!(self.state, DisputeState::Disputed)
     }

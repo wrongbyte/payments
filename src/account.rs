@@ -4,6 +4,7 @@ use rust_decimal::Decimal;
 
 use crate::transaction::{Dispute, Transaction, TransactionId, TransactionKind};
 
+/// Client's assets account.
 #[derive(Eq, PartialEq)]
 pub struct Account {
     pub available: Decimal,
@@ -22,7 +23,7 @@ impl Account {
         }
     }
 
-    // todo: maybe store disputes somewhere else
+    /// Updates the client account accordingly to the new transaction received.
     pub fn process_transaction(
         &mut self,
         transaction: Transaction,
@@ -37,12 +38,12 @@ impl Account {
 
         match transaction_kind {
             TransactionKind::Deposit { amount } => {
-                if amount > Decimal::ZERO {
+                if transaction.amount_is_valid() {
                     self.available += amount
                 }
             }
             TransactionKind::Withdraw { amount } => {
-                if self.available > amount {
+                if transaction.amount_is_valid() && self.available > amount {
                     self.available -= amount
                 }
             }
