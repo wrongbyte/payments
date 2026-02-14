@@ -1,0 +1,10 @@
+[package]
+name = "payments"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.101"
+indexmap = "2.13.0"
+rust_decimal = "1.40.0"
+serde = { version = "1.0.228", features = ["derive"] }
