@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use indexmap::IndexMap;
 use rust_decimal::Decimal;
 
 use crate::transaction::{Dispute, Transaction, TransactionId, TransactionKind};
@@ -10,7 +11,7 @@ pub struct Account {
     pub available: Decimal,
     pub held: Decimal,
     pub locked: bool,
-    pub transactions: HashMap<TransactionId, Transaction>,
+    pub transactions: IndexMap<TransactionId, Transaction>,
 }
 
 impl Account {
@@ -19,7 +20,7 @@ impl Account {
             available: initial_deposit,
             held: Decimal::ZERO,
             locked: false,
-            transactions: HashMap::new(),
+            transactions: IndexMap::new(),
         }
     }
 
