@@ -8,9 +8,14 @@ use crate::transaction::{Dispute, Transaction, TransactionId, TransactionKind};
 /// Client's assets account.
 #[derive(Eq, PartialEq)]
 pub struct Account {
+    /// Funds available for transactions
     pub available: Decimal,
+    /// Funds held due to disputes.
     pub held: Decimal,
+    /// If this account can do transactions
     pub locked: bool,
+    /// History of transactions of this client, stored in 
+    /// chronological order.
     pub transactions: IndexMap<TransactionId, Transaction>,
 }
 
