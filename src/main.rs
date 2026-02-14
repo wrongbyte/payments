@@ -9,8 +9,14 @@ pub mod account;
 pub mod engine;
 pub mod transaction;
 
-fn main() {
-    println!("Hello, world!");
+fn main() -> std::io::Result<()> {
+    let file = std::env::args().nth(1).expect("TODO");
+
+    let mut reader = csv::ReaderBuilder::new()
+        .trim(csv::Trim::All)
+        .from_path(&file)?;
+    
+    Ok(())
 }
 
 pub fn process_transactions(inputs: Vec<Transaction>) {
