@@ -32,6 +32,10 @@ impl Account {
         }
     }
 
+    pub fn total_funds(&self) -> Decimal {
+        self.available + self.held
+    }
+
     /// Updates the client account accordingly to the new transaction received.
     pub fn process_transaction(&mut self, transaction: Transaction) {
         if self.locked {
