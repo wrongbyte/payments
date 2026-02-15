@@ -21,8 +21,16 @@ client,available,held,total,locked
 2,2,0,2,false
 ```
 
-## Overview
-TODO
+## Design
+When a dispute is received and the client doesn't have enough available funds to cover it, the program could either ignore the dispute or process it, allowing the available balance to go negative. I chose to allow negative balances because it better reflects the real state of the account: the client effectively owes money. In practice, this means the client would be unable to withdraw anything until they deposit enough to cover the deficit, which aligns with how held funds are meant to work. This also ensures the system can properly track disputes even when the client has already moved funds out of the account, which is exactly the kind of fraud scenario disputes are designed to catch.
+### Behavior
+- Invalid transactions are ignored;
+- Only `deposit` transactions can be disputed;
+- A transaction can have at most one disputed associated with it;
+- New accounts can only be created on `deposit` transactions;
+- Deposits or withdrawals cannot be zero;
+- If an account does not have enough funds for disputes, its balance becomes negative.
+- Only valid deposits and withdraws stay in the clients transaction history.
 
 ## Transactions
 There are five types of transactions recorded. Deposits and withdraws represent money flowing in and out of the system, while disputes, resolves and chargebacks are related to dispute claims.
@@ -40,3 +48,5 @@ A resolution to an ongoing dispute, indicating that the disputed transaction was
 
 ### Chargeback
 The final state of a dispute, representing a reversal of the original transaction. Processing a chargeback removes the disputed funds from both held and total, and immediately freezes the client's account. A chargeback is ignored if the referenced transaction does not exist or is not currently under dispute.
+
+

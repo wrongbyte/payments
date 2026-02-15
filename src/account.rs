@@ -52,7 +52,7 @@ impl Account {
                     self.transactions.insert(tx_id, transaction);
                 }
             }
-            TransactionKind::Withdraw { amount } => {
+            TransactionKind::Withdrawal { amount } => {
                 if transaction.amount_is_valid() && self.available > amount {
                     self.available -= amount;
                     self.transactions.insert(tx_id, transaction);
@@ -170,7 +170,7 @@ mod tests {
 
         transactions.push(Transaction {
             client: ClientId(1),
-            kind: TransactionKind::Withdraw {
+            kind: TransactionKind::Withdrawal {
                 amount: Decimal::new(5, 0),
             },
             id: TransactionId(15),
@@ -205,7 +205,7 @@ mod tests {
 
         transactions.push(Transaction {
             client: ClientId(1),
-            kind: TransactionKind::Withdraw {
+            kind: TransactionKind::Withdrawal {
                 amount: Decimal::new(100, 0),
             },
             id: TransactionId(15),

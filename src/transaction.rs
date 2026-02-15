@@ -9,12 +9,13 @@ pub struct ClientId(pub u16);
 #[serde(transparent)]
 pub struct TransactionId(pub u32);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
 pub enum TransactionKind {
     /// A credit to a client's asset account from an external source.
     Deposit { amount: Decimal },
     /// A debit from a client's asset account to an external destination.
-    Withdraw { amount: Decimal },
+    Withdrawal { amount: Decimal },
     /// Claim that a previously processed transaction (specifically a deposit) was
     /// erroneous or fraudulent and should be reversed.
     Dispute,
@@ -27,10 +28,12 @@ pub enum TransactionKind {
 
 /// Record of a financial operation performed on a client's asset account.
 /// A transaction represent immutable historical events.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 pub struct Transaction {
+    #[serde(flatten)]
     pub kind: TransactionKind,
     pub client: ClientId,
+    #[serde(rename = "tx")]
     pub id: TransactionId,
 }
 
@@ -56,7 +59,7 @@ impl Transaction {
     pub fn amount_is_valid(&self) -> bool {
         match self.kind {
             TransactionKind::Deposit { amount } => amount > Decimal::ZERO,
-            TransactionKind::Withdraw { amount } => amount > Decimal::ZERO,
+            TransactionKind::Withdrawal { amount } => amount > Decimal::ZERO,
             _ => true,
         }
     }
