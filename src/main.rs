@@ -4,9 +4,14 @@ use crate::{
     account::Account,
     transaction::{ClientId, Transaction, TransactionKind},
 };
+use rust_decimal::Decimal;
 
 pub mod account;
 pub mod transaction;
+
+fn format_decimal(value: Decimal) -> String {
+    format!("{:.4}", value)
+}
 
 fn main() -> std::io::Result<()> {
     let file = std::env::args()
@@ -40,9 +45,9 @@ fn main() -> std::io::Result<()> {
     for (client_id, account) in clients {
         wtr.write_record(&[
             client_id.0.to_string(),
-            account.available.to_string(),
-            account.held.to_string(),
-            account.total_funds().to_string(),
+            format_decimal(account.available),
+            format_decimal(account.held),
+            format_decimal(account.total_funds()),
             account.locked.to_string(),
         ])?;
     }
